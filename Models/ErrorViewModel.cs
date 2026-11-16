@@ -1,9 +1,14 @@
-namespace SchoolManagement.Models
-{
-    public class ErrorViewModel
-    {
-        public string? RequestId { get; set; }
+namespace SchoolManagement.Models;
 
-        public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+public class ErrorViewModel
+{
+    public string? RequestId { get; set; }
+
+    public bool ShowRequestId
+    {
+        get
+        {
+            return !string.IsNullOrEmpty(RequestId);
+        }
     }
 }

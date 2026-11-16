@@ -3,3 +3,6 @@
 bin/
 obj/
 *.user
+App_Data/
+node_modules/
+ClientApp/.vite/

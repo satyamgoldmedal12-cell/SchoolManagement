@@ -1,0 +1,7 @@
+@{
+    var onList = string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Index", StringComparison.OrdinalIgnoreCase);
+}
+<nav class="nav nav-tabs mb-3" aria-label="Module Path">
+    <a class="nav-link @(!onList ? "active" : "")" asp-action="Create">Add</a>
+    <a class="nav-link @(onList ? "active" : "")" asp-action="Index">List</a>
+</nav>

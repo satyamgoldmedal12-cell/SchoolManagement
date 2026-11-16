@@ -1,0 +1,7 @@
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(tw);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(tw);
+@source "./**/*.{js,jsx}";
+
+/* Bootstrap owns resets and form controls; Tailwind utilities use the tw: prefix. */
+.school-users-shell { min-height: 18rem; }

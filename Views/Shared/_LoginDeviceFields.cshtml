@@ -1,0 +1,15 @@
+@model LoginDeviceInput
+
+<div class="mb-3" data-login-device>
+    <input asp-for="TimeZone" type="hidden" data-device-field="timezone" />
+    <input asp-for="Latitude" type="hidden" data-device-field="latitude" />
+    <input asp-for="Longitude" type="hidden" data-device-field="longitude" />
+    <input asp-for="AccuracyMeters" type="hidden" data-device-field="accuracy" />
+    <input asp-for="CapturedAtUnixMs" type="hidden" data-device-field="captured" />
+    <input asp-for="LocationStatus" type="hidden" data-device-field="status" />
+
+    <div class="form-text" role="status" aria-live="polite" data-device-status>
+        Your browser will ask to include your location in login history. You can still log in if you decline.
+        If allowed, the configured map service can use your coordinates to find and record an address.
+    </div>
+</div>

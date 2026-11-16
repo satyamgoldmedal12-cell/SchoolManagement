@@ -1,0 +1,157 @@
+@model PageRegistrationModel
+@{
+    bool editing = Model.PathId > 0;
+    ViewData["Title"] = editing ? "Edit module path" : "Add module path";
+    var parents = ViewData["ParentPages"] as IReadOnlyList<PageRegistrationModel> ?? Array.Empty<PageRegistrationModel>();
+}
+
+<h1 class="h3 mb-3">Module Path</h1>
+<partial name="_Tabs" />
+
+<form asp-action="@(editing ? "Edit" : "Create")" asp-route-id="@(editing ? Model.PathId : null)" method="post" class="card">
+    <div class="card-body">
+        @if (editing)
+        {
+            <input asp-for="RowVersion" type="hidden" />
+        }
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+        <div class="row g-3">
+
+            <div class="col-12">
+                <label for="FullPathPreview" class="form-label">Full page path</label>
+                <input id="FullPathPreview" class="form-control" value="@Model.FullPath" readonly />
+            </div>
+
+            <div class="col-md-6">
+                <label for="Application" class="form-label">Application</label>
+                <input id="Application" class="form-control" value="SchoolManagement" readonly />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="HierarchyId" class="form-label"></label>
+                <select asp-for="HierarchyId" class="form-select" aria-describedby="ParentPageHelp">
+                    <option value="">Root level</option>
+                    @foreach (var parent in parents)
+                    {
+                        var path = string.IsNullOrEmpty(parent.FullPath) ? parent.PageName : parent.FullPath;
+                        <option value="@parent.PathId" data-parent-id="@parent.HierarchyId" data-page-name="@parent.PageName" data-parent-path="@path">@path</option>
+                    }
+                </select>
+                <div id="ParentPageHelp" class="form-text">Select a folder to see its child folders.</div>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="PageName" class="form-label"></label>
+                <input asp-for="PageName" class="form-control" maxlength="100" />
+                <span asp-validation-for="PageName" class="text-danger"></span>
+            </div>
+
+            <div class="col-sm-4">
+                <label asp-for="LabelId" class="form-label"></label>
+                <input asp-for="LabelId" class="form-control" min="0" />
+                <span asp-validation-for="LabelId" class="text-danger"></span>
+            </div>
+            <div class="col-sm-4">
+                <label asp-for="SequenceId" class="form-label"></label>
+                <input asp-for="SequenceId" class="form-control" min="0" />
+                <span asp-validation-for="SequenceId" class="text-danger"></span>
+            </div>
+            <div class="col-sm-4 d-flex align-items-center">
+                <div class="form-check mt-sm-4">
+                    <input asp-for="IsLeafNode" class="form-check-input" />
+                    <label asp-for="IsLeafNode" class="form-check-label"></label>
+                </div>
+            </div>
+      
+            <fieldset class="col-12" id="MenuIconPicker"
+                      data-icons="@System.Text.Json.JsonSerializer.Serialize(ModulePathIcons.Options)"
+                      data-legacy-icon="@ViewData["LegacyIconKey"]"
+                      data-legacy-icon-class="@ModulePathIcons.GetCssClass(ViewData["LegacyIconKey"] as string)"
+                      data-legacy-icon-label="@ModulePathIcons.GetLabel(ViewData["LegacyIconKey"] as string)">
+                <legend class="h6 mb-2">Menu icon</legend>
+                <input asp-for="PageSystemName" type="hidden" />
+                <p id="SelectedMenuIcon" class="mb-2" aria-live="polite"></p>
+                <label for="MenuIconSearch" class="visually-hidden">Search Flaticon icons</label>
+                <input type="search" id="MenuIconSearch" class="form-control mb-2"
+                       placeholder="Search Flaticon icons" autocomplete="off" />
+                <div id="MenuIconChoices" class="menu-icon-choices mb-2" role="group" aria-label="Available menu icons" tabindex="0"></div>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <button type="button" id="PreviousMenuIcons" class="btn btn-sm btn-outline-secondary">Previous</button>
+                    <button type="button" id="NextMenuIcons" class="btn btn-sm btn-outline-secondary">Next</button>
+                    <span id="MenuIconCount" class="small text-muted" role="status"></span>
+                    <a class="small ms-auto" href="https://www.flaticon.com/uicons">UIcons by Flaticon</a>
+                </div>
+                <span asp-validation-for="PageSystemName" class="text-danger"></span>
+            </fieldset>
+            <fieldset id="LeafFields" class="col-12">
+                <legend class="h6 mb-3">Page route and operations</legend>
+                <label asp-for="PathName" class="form-label"></label>
+                <input asp-for="PathName" class="form-control" maxlength="400" placeholder="/Classes" />
+                <span asp-validation-for="PathName" class="text-danger"></span>
+                <div class="row row-cols-2 row-cols-md-4 g-2 mt-2">
+                    <div class="col">
+                        <div class="form-check">
+                            <input asp-for="IsAdd" class="form-check-input" />
+                            <label asp-for="IsAdd" class="form-check-label"></label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input asp-for="IsEdit" class="form-check-input" />
+                            <label asp-for="IsEdit" class="form-check-label"></label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input asp-for="IsRead" class="form-check-input" />
+                            <label asp-for="IsRead" class="form-check-label"></label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input asp-for="IsDelete" class="form-check-input" />
+                            <label asp-for="IsDelete" class="form-check-label"></label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input asp-for="IsImport" class="form-check-input" />
+                            <label asp-for="IsImport" class="form-check-label"></label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input asp-for="IsExport" class="form-check-input" />
+                            <label asp-for="IsExport" class="form-check-label"></label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input asp-for="Approve1" class="form-check-input" />
+                            <label asp-for="Approve1" class="form-check-label"></label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input asp-for="Approve2" class="form-check-input" />
+                            <label asp-for="Approve2" class="form-check-label"></label>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">@(editing ? "Update" : "Add")</button>
+            @if (!editing)
+            {
+                <a asp-action="Create" class="btn btn-outline-secondary">Clear</a>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/module-path.js" asp-append-version="true"></script>
+    <script src="~/js/module-icon-picker.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,178 @@
+@using System.Security.Claims
+@using System.Text.Json
+@model PagedResult<UserSummary>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    ViewData["Title"] = "Users";
+
+    var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+    var initialUsers = JsonSerializer.Serialize(Model, jsonOptions);
+    var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    var rowNumber = (Model.Page - 1) * 50;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h1 class="h3 mb-1">Users</h1>
+        <p class="text-muted mb-0">Register people, manage their access, and send their first login email.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary text-nowrap">Add user</a>
+</div>
+
+<div id="users-workspace"
+     data-initial="@initialUsers"
+     data-api-url="@Url.Content("~/api/users")"
+     data-csrf="@csrfToken"
+     data-actor-id="@currentUserId"
+     data-access-email-url="@Url.Action("SendPasswordLink")"
+     data-set-active-url="@Url.Action("SetActive")">
+
+    <form method="get" class="d-flex gap-2 mb-3" role="search">
+        <input name="search"
+               value="@Model.Search"
+               class="form-control"
+               placeholder="Search by name or email"
+               aria-label="Search users" />
+        <button class="btn btn-outline-secondary">Search</button>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Sr. No.</th>
+                    <th>Name / email</th>
+                    <th>Designation / role</th>
+                    <th>Status</th>
+                    <th>Last login (UTC)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Items)
+                {
+                    rowNumber++;
+                    var lastLoginText = "Never";
+                    if (user.LastLoginAt.HasValue)
+                    {
+                        lastLoginText = user.LastLoginAt.Value.ToString("dd MMM yyyy HH:mm");
+                    }
+
+                    <tr>
+                        <td>@rowNumber</td>
+                        <td>
+                            <strong>@user.FullName</strong><br />
+                            @user.Email
+                        </td>
+                        <td>
+                            @user.DesignationName<br />
+                            <small>@user.RoleName</small>
+                        </td>
+                        <td>
+                            @if (user.IsActive)
+                            {
+                                <text>Active</text>
+                            }
+                            else
+                            {
+                                <text>Inactive</text>
+                            }
+                            <br />
+                            <small>
+                                @if (user.MustChangePassword)
+                                {
+                                    <text>First password change pending</text>
+                                }
+                                else
+                                {
+                                    <text>Password set</text>
+                                }
+                            </small>
+                            <br />
+                            <small>
+                                @if (user.InvitationSentAt.HasValue)
+                                {
+                                    <text>Login email sent</text>
+                                }
+                                else
+                                {
+                                    <text>Email pending</text>
+                                }
+                            </small>
+                        </td>
+                        <td>@lastLoginText</td>
+                        <td>
+                            @if (user.IsActive)
+                            {
+                                <form asp-action="SendPasswordLink" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@user.Id" />
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        @if (user.MustChangePassword)
+                                        {
+                                            <text>Resend login email</text>
+                                        }
+                                        else
+                                        {
+                                            <text>Send reset link</text>
+                                        }
+                                    </button>
+                                </form>
+                            }
+
+                            @if (user.Id != currentUserId)
+                            {
+                                var nextActiveValue = (!user.IsActive).ToString().ToLowerInvariant();
+                                var rowVersion = Convert.ToBase64String(user.RowVersion);
+
+                                <form asp-action="SetActive" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@user.Id" />
+                                    <input type="hidden" name="active" value="@nextActiveValue" />
+                                    <input type="hidden" name="rowVersion" value="@rowVersion" />
+                                    <button class="btn btn-sm btn-outline-secondary">
+                                        @if (user.IsActive)
+                                        {
+                                            <text>Deactivate</text>
+                                        }
+                                        else
+                                        {
+                                            <text>Activate</text>
+                                        }
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @if (Model.Items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6">No users found.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <nav aria-label="User pages" class="d-flex gap-2">
+        @if (Model.Page > 1)
+        {
+            <a class="btn btn-outline-secondary"
+               asp-route-page="@(Model.Page - 1)"
+               asp-route-search="@Model.Search">Previous</a>
+        }
+
+        @if (Model.HasNext)
+        {
+            <a class="btn btn-outline-secondary"
+               asp-route-page="@(Model.Page + 1)"
+               asp-route-search="@Model.Search">Next</a>
+        }
+    </nav>
+</div>
+
+@section Scripts
+{
+    <script type="module" src="~/dist/school.js" asp-append-version="true"></script>
+}

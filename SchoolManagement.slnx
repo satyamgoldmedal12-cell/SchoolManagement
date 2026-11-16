@@ -1,3 +1,6 @@
 <Solution>
   <Project Path="SchoolManagement.csproj" />
+  <Folder Name="/tests/">
+    <Project Path="tests/SchoolManagement.Tests/SchoolManagement.Tests.csproj" />
+  </Folder>
 </Solution>

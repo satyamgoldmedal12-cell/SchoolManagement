@@ -1,0 +1,19 @@
+﻿@model Classes
+@{
+    ViewData["Title"] = "Add Subject";
+}
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+    <div class="mb-3">
+        <label asp-for="ClassName" class="form-label"></label>
+        <input asp-for="ClassName" class="form-control" autocomplete="name" />
+        <span asp-validation-for="ClassName" class="text-danger"></span>
+    </div>
+
+    <button class="btn btn-primary">Save</button>
+
+
+    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+</form>

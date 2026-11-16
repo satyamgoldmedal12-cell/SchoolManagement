@@ -29,3 +29,32 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+
+#MenuIconPicker {
+  min-width: 0;
+}
+
+.menu-icon-choices {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: .375rem;
+  max-width: 100%;
+  overflow-x: scroll;
+  padding: .25rem .25rem .5rem;
+}
+
+.menu-icon-choice {
+  display: flex;
+  flex: 0 0 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.menu-icon-choice i,
+#SelectedMenuIcon > i {
+  font-size: 14px;
+  line-height: 1;
+}

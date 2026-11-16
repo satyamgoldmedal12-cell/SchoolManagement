@@ -1,0 +1,32 @@
+@model IReadOnlyList<Classes>
+@{
+    ViewData["Title"] = "Subjects";
+}
+
+<div class="d-flex justify-content-between mb-3">
+    <h1 class="h3">Subjects</h1>
+    <a asp-action="Create" class="btn btn-primary">Add subject</a>
+</div>
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">No subjects added yet.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Clasess name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var subject in Model)
+            {
+                <tr>
+                    <td>@subject.ClassName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

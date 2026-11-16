@@ -1,0 +1,13 @@
+@model PageRegistrationModel
+@{
+    ViewData["Title"] = "Delete module path";
+}
+
+<h1 class="h3">Delete module path</h1>
+<p>Delete <strong>@Model.PageName</strong>?</p>
+
+<form asp-action="Delete" asp-route-id="@Model.PathId" method="post">
+    <input asp-for="RowVersion" type="hidden" />
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+</form>
