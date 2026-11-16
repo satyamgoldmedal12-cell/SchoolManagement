@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using SchoolManagement.Authorization;
 using SchoolManagement.Configuration;
 using SchoolManagement.Data;
 using SchoolManagement.Services;
@@ -20,11 +21,17 @@ builder.Services.AddSchoolManagement(
     builder.Environment.ContentRootPath,
     builder.Environment.IsDevelopment());
 
+builder.Services.AddScoped<IAuthorizationHandler, PageAccessHandler>();
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
+
+    options.AddPolicy(PageAccessRequirement.ReadPolicy, policy => policy.RequireAuthenticatedUser()
+        .AddRequirements(new PageAccessRequirement(RequireAdd: false)));
+    options.AddPolicy(PageAccessRequirement.AddPolicy, policy => policy.RequireAuthenticatedUser()
+        .AddRequirements(new PageAccessRequirement(RequireAdd: true)));
 
     options.AddPolicy("PasswordSetup", policy =>
     {

@@ -21,20 +21,8 @@ public sealed class PagesController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index(string? search, CancellationToken cancellationToken)
     {
-        var pages = await _pages.ListAsync(cancellationToken);
-        search = search?.Trim();
-        ViewData["Search"] = search;
-
-        if (!string.IsNullOrEmpty(search))
-        {
-            pages = pages.Where(entry =>
-                entry.PageName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                entry.PageSystemName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                (entry.FullPath?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (entry.PathName?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
-        }
-
-        return View(pages);
+        ViewData["Search"] = search?.Trim();
+        return View(await _pages.ListAsync(cancellationToken));
     }
 
     [HttpGet]
@@ -137,6 +125,7 @@ public sealed class PagesController : BaseController
     {
         ViewData["ParentPages"] = pages.Where(entry => !entry.IsLeafNode && entry.PathId != pathId).ToList();
         var iconKey = pages.FirstOrDefault(entry => entry.PathId == pathId)?.PageSystemName;
+
         if (!string.IsNullOrEmpty(iconKey) && !ModulePathIcons.Contains(iconKey))
         {
             ViewData["LegacyIconKey"] = iconKey;

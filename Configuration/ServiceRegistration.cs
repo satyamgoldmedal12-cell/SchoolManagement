@@ -115,6 +115,9 @@ public static class ServiceRegistration
         services.AddScoped<IClassesService, ClassesService>();
         services.AddScoped<IPageRepository, PageRepository>();
         services.AddScoped<IPageService, PageService>();
+        services.AddScoped<PageInRoleRepository>();
+        services.AddScoped<PageInRoleService>();
+        services.AddScoped<PageAccessService>();
         return services;
     }
 }

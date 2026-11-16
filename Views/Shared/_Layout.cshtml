@@ -1,3 +1,4 @@
+@{ var signedIn = User.Identity?.IsAuthenticated == true; }
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,86 +13,49 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/dist/school.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SchoolManagement.styles.css" asp-append-version="true" />
+    @if (IsSectionDefined("GridAssets"))
+    {
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+        @await RenderSectionAsync("GridAssets")
+    }
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SchoolManagement</a>
+    <header class="border-bottom mb-3">
+        <nav class="navbar navbar-light bg-white" aria-label="Account">
+            <div class="container-fluid gap-2">
+                @if (signedIn)
+                {
+                    <button class="navbar-toggler d-md-none" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#school-sidebar" aria-controls="school-sidebar"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                }
+                <a class="navbar-brand me-auto" asp-controller="Home" asp-action="Index">SchoolManagement</a>
 
-                <button class="navbar-toggler"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target=".navbar-collapse"
-                        aria-controls="navbarSupportedContent"
-                        aria-expanded="false"
-                        aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-
-                        @if (User.IsInRole(AppRoles.Administrator))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Users" asp-action="Index">Users</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Subject" asp-action="Index">Subjects</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Classes" asp-action="Index">Classes</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Pages" asp-action="Index">Module Path</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Designations" asp-action="Index">Designations</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Roles" asp-action="Index">Roles</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="LoginHistory" asp-action="Index">Login History</a>
-                            </li>
-                        }
-                    </ul>
-
-                    <ul class="navbar-nav align-items-sm-center">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item">
-                                <span class="nav-link text-dark">@User.Identity.Name</span>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post">
-                                    <button type="submit" class="btn btn-outline-primary btn-sm">Log out</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Log in</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
+                @if (signedIn)
+                {
+                    <span class="navbar-text d-none d-sm-inline text-break">@User.Identity?.Name</span>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Log out</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Log in</a>
+                }
             </div>
         </nav>
     </header>
 
-    <div class="@(ViewData["WideContent"] is true ? "container-fluid px-3 px-lg-4" : "container")">
-        <main role="main" class="pb-3">
+    <div class="@(signedIn ? "school-shell" : ViewData["WideContent"] is true ? "container-fluid px-3 px-lg-4" : "container")">
+        @if (signedIn)
+        {
+            <aside id="school-sidebar" class="school-sidebar collapse d-md-block">
+                @await Component.InvokeAsync("PageMenu")
+            </aside>
+        }
+        <main role="main" class="school-content pb-3">
             @if (TempData["Success"] is string success)
             {
                 <div class="alert alert-success" role="status">@success</div>
@@ -112,7 +76,10 @@
         </div>
     </footer>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    @if (!IsSectionDefined("GridAssets"))
+    {
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    }
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

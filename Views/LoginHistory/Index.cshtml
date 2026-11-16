@@ -1,11 +1,23 @@
+@using DevExtreme.AspNet.Mvc
 @using System.Globalization
 @model PagedResult<LoginHistorySummary>
 @{
     ViewData["Title"] = "Login History";
     ViewData["WideContent"] = true;
-    var rowNumber = (Model.Page - 1) * 50;
-    var firstRow = Model.Items.Count == 0 ? 0 : rowNumber + 1;
-    var lastRow = rowNumber + Model.Items.Count;
+    var rowOffset = (Model.Page - 1) * 50;
+    var firstRow = Model.Items.Count == 0 ? 0 : rowOffset + 1;
+    var lastRow = Model.Items.Count == 0 ? 0 : rowOffset + Model.Items.Count;
+    var rows = Model.Items.Select((session, index) => new
+    {
+        session.Id,
+        Number = rowOffset + index + 1,
+        Login = session.LoginAtUtc.ToString("dd MMM yyyy HH:mm:ss"),
+        Logout = session.LogoutAtUtc?.ToString("dd MMM yyyy HH:mm:ss") ?? "—"
+    }).ToArray();
+}
+
+@section GridAssets {
+    <partial name="_DevExtremeGridAssets" />
 }
 
 <section class="history-page" aria-labelledby="history-title">
@@ -20,182 +32,146 @@
     <div class="history-card">
         <div class="history-toolbar">
             <div class="history-search">
-            <form method="get" class="d-flex gap-2 w-100" role="search">
-                <label for="history-search" class="visually-hidden">Search login history</label>
-                <input id="history-search" name="search" value="@Model.Search" class="form-control"
-                       placeholder="Search by name or email" />
-                <button class="btn btn-primary" type="submit">Search</button>
-                @if (!string.IsNullOrWhiteSpace(Model.Search))
-                {
-                    <a class="btn btn-outline-secondary" asp-action="Index">Clear</a>
-                }
-            </form>
+                <form method="get" class="d-flex gap-2 w-100" role="search">
+                    <label for="history-search" class="visually-hidden">Search login history</label>
+                    <input id="history-search" name="search" value="@Model.Search" class="form-control"
+                           placeholder="Search by name or email" />
+                    <button class="btn btn-primary" type="submit">Search</button>
+                    @if (!string.IsNullOrWhiteSpace(Model.Search))
+                    {
+                        <a class="btn btn-outline-secondary" asp-action="Index">Clear</a>
+                    }
+                </form>
             </div>
             <span class="history-count">Showing @firstRow–@lastRow</span>
         </div>
 
-        <div class="history-scroll" role="region" aria-label="Scrollable login history" tabindex="0">
-            <table class="table history-grid mb-0">
-                <caption class="visually-hidden">User login history. All dates and times are UTC. Expand Details for session and location information.</caption>
-                <colgroup>
-                    <col class="history-col-number" />
-                    <col class="history-col-user" />
-                    <col class="history-col-date" />
-                    <col class="history-col-date" />
-                    <col class="history-col-status" />
-                    <col class="history-col-system" />
-                    <col class="history-col-address" />
-                    <col class="history-col-details" />
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th scope="col">Sr. No.</th>
-                        <th scope="col">User</th>
-                        <th scope="col">Login (UTC)</th>
-                        <th scope="col">Logout (UTC)</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">System / browser</th>
-                        <th scope="col">Address</th>
-                        <th scope="col"><span class="visually-hidden">Session details</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var session in Model.Items)
-                    {
-                        rowNumber++;
-                        var detailsId = "history-details-" + session.Id;
-                        var region = string.Join(", ", new[] { session.AreaRegion, session.AreaCountry }.Where(value => !string.IsNullOrWhiteSpace(value)));
-                        var hasCoordinates = session.Latitude.HasValue && session.Longitude.HasValue;
-                        var latitude = session.Latitude?.ToString("0.000000", CultureInfo.InvariantCulture);
-                        var longitude = session.Longitude?.ToString("0.000000", CultureInfo.InvariantCulture);
-                        var mapUrl = "https://www.google.com/maps/search/?api=1&query=" + latitude + "," + longitude;
+        @(Html.DevExtreme().DataGrid()
+            .ID("loginHistoryGrid")
+            .DataSource(rows, "Id")
+            .ShowBorders(false)
+            .RowAlternationEnabled(true)
+            .WordWrapEnabled(true)
+            .Height("68vh")
+            .Sorting(sorting => sorting.Mode(GridSortingMode.None))
+            .Paging(paging => paging.Enabled(false))
+            .NoDataText("No login history found.")
+            .MasterDetail(detail => detail.Enabled(true).Template(new JS("schoolGrid.details")))
+            .Columns(columns =>
+            {
+                columns.Add().DataField("Number").Caption("Sr. No.").Width(70);
+                columns.Add().Name("user").Caption("User").MinWidth(180)
+                    .CellTemplate(new JS("schoolGrid.cell"));
+                columns.Add().DataField("Login").Caption("Login (UTC)").Width(130);
+                columns.Add().DataField("Logout").Caption("Logout (UTC)").Width(130);
+                columns.Add().Name("status").Caption("Status").Width(100)
+                    .CellTemplate(new JS("schoolGrid.cell"));
+                columns.Add().Name("system").Caption("System / browser").MinWidth(145)
+                    .CellTemplate(new JS("schoolGrid.cell"));
+                columns.Add().Name("address").Caption("Address").MinWidth(245)
+                    .CellTemplate(new JS("schoolGrid.cell"));
+            }))
 
-                        <tr class="history-record">
-                            <td class="text-muted">@rowNumber</td>
-                            <td>
-                                <strong class="history-user">@session.FullName</strong>
-                                <span class="history-secondary history-email">@session.Email</span>
-                            </td>
-                            <td>
-                                <time datetime="@session.LoginAtUtc.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)Z">
-                                    <span class="history-date">@session.LoginAtUtc.ToString("dd MMM yyyy")</span>
-                                    <span class="history-secondary">@session.LoginAtUtc.ToString("HH:mm:ss")</span>
-                                </time>
-                            </td>
-                            <td>
-                                @if (session.LogoutAtUtc.HasValue)
-                                {
-                                    <span class="history-date">@session.LogoutAtUtc.Value.ToString("dd MMM yyyy")</span>
-                                    <span class="history-secondary">@session.LogoutAtUtc.Value.ToString("HH:mm:ss")</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">—</span>
-                                }
-                            </td>
-                            <td>
-                                @if (session.EndedAtUtc is null)
-                                {
-                                    <span class="badge history-active">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="badge history-ended">@session.EndReason</span>
-                                }
-                            </td>
-                            <td>
-                                <span>@(session.OperatingSystem ?? "Not captured")</span>
-                                <span class="history-secondary">@(session.Browser ?? "Not captured")</span>
-                                <span class="history-secondary">@(session.DeviceFormFactor ?? session.DeviceType ?? "Unknown device")</span>
-                            </td>
-                            <td>
-                                @if (!string.IsNullOrWhiteSpace(session.GeoLocation))
-                                {
-                                    <span class="history-address">@session.GeoLocation</span>
-                                    <span class="history-approximate">@(session.GeocodingProvider == "Google Maps" ? "Google Maps · location estimate" : "Approximate area")</span>
-                                }
-                                else if (!string.IsNullOrWhiteSpace(session.AreaName))
-                                {
-                                    <span class="history-address">Near @session.AreaName</span>
-                                    <span class="history-secondary">@region</span>
-                                    <span class="history-approximate">Approximate area</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">Address not recorded</span>
-                                    <span class="history-secondary">@(hasCoordinates ? "Coordinates available" : "Location not shared")</span>
-                                }
-                                @if (hasCoordinates)
-                                {
-                                    <a class="history-map" href="@mapUrl" target="_blank" rel="noopener noreferrer">View map<span class="visually-hidden"> for @session.FullName</span></a>
-                                }
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-secondary history-toggle" type="button"
-                                        data-bs-toggle="collapse" data-bs-target="#@detailsId"
-                                        aria-controls="@detailsId" aria-expanded="false"
-                                        aria-label="Session details for @session.FullName">Details</button>
-                            </td>
-                        </tr>
-                        <tr class="collapse history-detail-row" id="@detailsId">
-                            <td colspan="8">
-                                <div class="history-detail-grid">
-                                    <div>
-                                        <h2 class="history-detail-title">Session times (UTC)</h2>
-                                        <dl>
-                                            <dt>Last seen (UTC)</dt><dd>@session.LastSeenAtUtc.ToString("dd MMM yyyy HH:mm:ss")</dd>
-                                            <dt>Session end (UTC)</dt><dd>@(session.EndedAtUtc?.ToString("dd MMM yyyy HH:mm:ss") ?? "—")</dd>
-                                            <dt>Expires (UTC)</dt><dd>@session.ExpiresAtUtc.ToString("dd MMM yyyy HH:mm:ss")</dd>
-                                        </dl>
-                                        <p class="history-detail-note">Only an explicit logout records a logout time.</p>
-                                    </div>
-                                    <div>
-                                        <h2 class="history-detail-title">Device details</h2>
-                                        <dl>
-                                            <dt>System label</dt><dd>@(session.DeviceName ?? "Not recorded")</dd>
-                                            <dt>Device ID</dt><dd>@(session.DeviceId?.ToString() ?? "Not captured")</dd>
-                                            <dt>User agent</dt><dd>@(session.UserAgent ?? "Unknown")</dd>
-                                            <dt>DeviceFormFactor</dt><dd>@(session.DeviceFormFactor ?? session.DeviceType ?? "Unknown")</dd>
-                                        </dl>
-                                    </div>
-                                    <div>
-                                        <h2 class="history-detail-title">Location details</h2>
-                                        <dl>
-                                            <dt>IP address</dt><dd>@(session.IpAddress ?? "Unknown")</dd>
-                                            <dt>Location status</dt><dd>@(session.LocationStatus ?? "Not captured")</dd>
-                                            <dt>Time zone</dt><dd>@(session.TimeZone ?? "Not captured")</dd>
-                                            <dt>GeoLocation</dt><dd>@(session.GeoLocation ?? "Not recorded")</dd>
-                                            <dt>Address lookup</dt><dd>@(session.GeocodingStatus ?? "Not recorded")</dd>
-                                            @if (hasCoordinates)
-                                            {
-                                                <dt>Shared location</dt><dd>@latitude, @longitude</dd>
-                                                <dt>Accuracy</dt><dd>@session.LocationAccuracyMeters metres</dd>
-                                                <dt>Captured (UTC)</dt><dd>@session.LocationCapturedAtUtc?.ToString("dd MMM yyyy HH:mm:ss")</dd>
-                                            }
-                                            @if (session.AreaDistanceKm.HasValue)
-                                            {
-                                                <dt>Approximate nearest place</dt><dd>@session.AreaDistanceKm.Value.ToString("0.###", CultureInfo.InvariantCulture) km away</dd>
-                                            }
-                                        </dl>
-                                        @if (!string.IsNullOrWhiteSpace(session.LocationResponse))
-                                        {
-                                            <details class="history-response">
-                                                <summary>LocationResponse (JSON)</summary>
-                                                <pre>@session.LocationResponse</pre>
-                                            </details>
-                                        }
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                    @if (Model.Items.Count == 0)
-                    {
-                        <tr><td colspan="8" class="history-empty">No login history found.</td></tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        @foreach (var session in Model.Items)
+        {
+            var region = string.Join(", ", new[] { session.AreaRegion, session.AreaCountry }.Where(value => !string.IsNullOrWhiteSpace(value)));
+            var hasCoordinates = session.Latitude.HasValue && session.Longitude.HasValue;
+            var latitude = session.Latitude?.ToString("0.000000", CultureInfo.InvariantCulture);
+            var longitude = session.Longitude?.ToString("0.000000", CultureInfo.InvariantCulture);
+            var mapUrl = "https://www.google.com/maps/search/?api=1&query=" + latitude + "," + longitude;
+
+            <template id="loginHistoryGrid-user-@session.Id">
+                <strong class="history-user">@session.FullName</strong>
+                <span class="history-secondary history-email">@session.Email</span>
+            </template>
+            <template id="loginHistoryGrid-status-@session.Id">
+                @if (session.EndedAtUtc is null)
+                {
+                    <span class="badge history-active">Active</span>
+                }
+                else
+                {
+                    <span class="badge history-ended">@session.EndReason</span>
+                }
+            </template>
+            <template id="loginHistoryGrid-system-@session.Id">
+                <span>@(session.OperatingSystem ?? "Not captured")</span>
+                <span class="history-secondary">@(session.Browser ?? "Not captured")</span>
+                <span class="history-secondary">@(session.DeviceFormFactor ?? session.DeviceType ?? "Unknown device")</span>
+            </template>
+            <template id="loginHistoryGrid-address-@session.Id">
+                @if (!string.IsNullOrWhiteSpace(session.GeoLocation))
+                {
+                    <span class="history-address">@session.GeoLocation</span>
+                    <span class="history-approximate">@(session.GeocodingProvider == "Google Maps" ? "Google Maps · location estimate" : "Approximate area")</span>
+                }
+                else if (!string.IsNullOrWhiteSpace(session.AreaName))
+                {
+                    <span class="history-address">Near @session.AreaName</span>
+                    <span class="history-secondary">@region</span>
+                    <span class="history-approximate">Approximate area</span>
+                }
+                else
+                {
+                    <span class="text-muted">Address not recorded</span>
+                    <span class="history-secondary">@(hasCoordinates ? "Coordinates available" : "Location not shared")</span>
+                }
+                @if (hasCoordinates)
+                {
+                    <a class="history-map" href="@mapUrl" target="_blank" rel="noopener noreferrer">View map<span class="visually-hidden"> for @session.FullName</span></a>
+                }
+            </template>
+            <template id="loginHistoryGrid-details-@session.Id">
+                <div class="history-detail-grid">
+                    <div>
+                        <h2 class="history-detail-title">Session times (UTC)</h2>
+                        <dl>
+                            <dt>Last seen (UTC)</dt><dd>@session.LastSeenAtUtc.ToString("dd MMM yyyy HH:mm:ss")</dd>
+                            <dt>Session end (UTC)</dt><dd>@(session.EndedAtUtc?.ToString("dd MMM yyyy HH:mm:ss") ?? "—")</dd>
+                            <dt>Expires (UTC)</dt><dd>@session.ExpiresAtUtc.ToString("dd MMM yyyy HH:mm:ss")</dd>
+                        </dl>
+                        <p class="history-detail-note">Only an explicit logout records a logout time.</p>
+                    </div>
+                    <div>
+                        <h2 class="history-detail-title">Device details</h2>
+                        <dl>
+                            <dt>System label</dt><dd>@(session.DeviceName ?? "Not recorded")</dd>
+                            <dt>Device ID</dt><dd>@(session.DeviceId?.ToString() ?? "Not captured")</dd>
+                            <dt>User agent</dt><dd>@(session.UserAgent ?? "Unknown")</dd>
+                            <dt>DeviceFormFactor</dt><dd>@(session.DeviceFormFactor ?? session.DeviceType ?? "Unknown")</dd>
+                        </dl>
+                    </div>
+                    <div>
+                        <h2 class="history-detail-title">Location details</h2>
+                        <dl>
+                            <dt>IP address</dt><dd>@(session.IpAddress ?? "Unknown")</dd>
+                            <dt>Location status</dt><dd>@(session.LocationStatus ?? "Not captured")</dd>
+                            <dt>Time zone</dt><dd>@(session.TimeZone ?? "Not captured")</dd>
+                            <dt>GeoLocation</dt><dd>@(session.GeoLocation ?? "Not recorded")</dd>
+                            <dt>Address lookup</dt><dd>@(session.GeocodingStatus ?? "Not recorded")</dd>
+                            @if (hasCoordinates)
+                            {
+                                <dt>Shared location</dt><dd>@latitude, @longitude</dd>
+                                <dt>Accuracy</dt><dd>@session.LocationAccuracyMeters metres</dd>
+                                <dt>Captured (UTC)</dt><dd>@session.LocationCapturedAtUtc?.ToString("dd MMM yyyy HH:mm:ss")</dd>
+                            }
+                            @if (session.AreaDistanceKm.HasValue)
+                            {
+                                <dt>Approximate nearest place</dt><dd>@session.AreaDistanceKm.Value.ToString("0.###", CultureInfo.InvariantCulture) km away</dd>
+                            }
+                        </dl>
+                        @if (!string.IsNullOrWhiteSpace(session.LocationResponse))
+                        {
+                            <details class="history-response">
+                                <summary>LocationResponse (JSON)</summary>
+                                <pre>@session.LocationResponse</pre>
+                            </details>
+                        }
+                    </div>
+                </div>
+            </template>
+        }
+
 
         <nav class="history-pagination" aria-label="Login history pages">
             <span class="history-count">Page @Model.Page</span>

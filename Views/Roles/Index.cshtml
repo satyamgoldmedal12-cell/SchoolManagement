@@ -1,6 +1,18 @@
+@using DevExtreme.AspNet.Mvc
+@using System.Globalization
 @model IReadOnlyList<RoleSummary>
 @{
     ViewData["Title"] = "Roles";
+    var rows = Model.Select(role => new
+    {
+        role.Id,
+        role.Name,
+        CreatedAt = role.CreatedAt.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+    }).ToArray();
+}
+
+@section GridAssets {
+    <partial name="_DevExtremeGridAssets" />
 }
 
 <div class="d-flex justify-content-between mb-3">
@@ -10,20 +22,18 @@
 
 <p class="text-muted">Administrator manages users, designations, and roles. Other roles currently access the signed-in home page.</p>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Created (UTC)</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var role in Model)
-        {
-            <tr>
-                <td>@role.Name</td>
-                <td>@role.CreatedAt.ToString("dd MMM yyyy HH:mm")</td>
-            </tr>
-        }
-    </tbody>
-</table>
+@(Html.DevExtreme().DataGrid()
+    .ID("rolesGrid")
+    .DataSource(rows, "Id")
+    .ShowBorders(true)
+    .RowAlternationEnabled(true)
+    .NoDataText("No roles found.")
+    .SearchPanel(search => search.Visible(true).Placeholder("Search roles"))
+    .FilterRow(filter => filter.Visible(true))
+    .Paging(paging => paging.PageSize(20))
+    .Pager(pager => pager.Visible(true).ShowInfo(true).ShowNavigationButtons(true))
+    .Columns(columns =>
+    {
+        columns.Add().DataField("Name");
+        columns.Add().DataField("CreatedAt").Caption("Created (UTC)");
+    }))
