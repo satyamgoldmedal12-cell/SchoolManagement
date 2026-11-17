@@ -1,32 +1,29 @@
+@using DevExtreme.AspNet.Mvc
+
 @model IReadOnlyList<Classes>
 @{
-    ViewData["Title"] = "Subjects";
+    ViewData["Title"] = "Classes";
+}
+
+@section GridAssets {
+    <partial name="_DevExtremeGridAssets" />
 }
 
 <div class="d-flex justify-content-between mb-3">
-    <h1 class="h3">Subjects</h1>
-    <a asp-action="Create" class="btn btn-primary">Add subject</a>
+    <h1 class="h3">Classes</h1>
+    @if (ViewData["CanAdd"] is true)
+    {
+        <a asp-action="Create" class="btn btn-primary">Add class</a>
+    }
 </div>
 
-@if (Model.Count == 0)
-{
-    <p class="text-muted">No subjects added yet.</p>
-}
-else
-{
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th scope="col">Clasess name</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var subject in Model)
-            {
-                <tr>
-                    <td>@subject.ClassName</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+@(Html.DevExtreme().DataGrid()
+    .ID("classesGrid")
+    .DataSource(Model)
+    .ShowBorders(true)
+    .RowAlternationEnabled(true)
+    .NoDataText("No classes added yet.")
+    .SearchPanel(search => search.Visible(true).Placeholder("Search classes"))
+    .Paging(paging => paging.PageSize(20))
+    .Pager(pager => pager.Visible(true).ShowInfo(true).ShowNavigationButtons(true))
+    .Columns(columns => columns.Add().DataField("ClassName").Caption("Class name")))

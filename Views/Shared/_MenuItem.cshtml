@@ -1,0 +1,26 @@
+@model PageMenuItem
+
+<li>
+    @if (Model.Url is not null)
+    {
+        <a class="school-menu-link" href="@Model.Url" aria-current="@(Model.IsCurrent ? "page" : null)">
+            <i class="@Model.IconClass" aria-hidden="true"></i>
+            <span>@Model.Name</span>
+        </a>
+    }
+    else
+    {
+        <details open="@Model.IsOpen">
+            <summary class="school-menu-link">
+                <i class="@Model.IconClass" aria-hidden="true"></i>
+                <span>@Model.Name</span>
+            </summary>
+            <ul class="school-menu-list school-menu-children">
+                @foreach (var child in Model.Children)
+                {
+                    <partial name="_MenuItem" model="child" />
+                }
+            </ul>
+        </details>
+    }
+</li>

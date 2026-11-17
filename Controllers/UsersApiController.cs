@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SchoolManagement.Interfaces.ServiceInterfaces;
+using SchoolManagement.Authorization;
 using SchoolManagement.Models;
 
 namespace SchoolManagement.Controllers;
 
 [ApiController]
 [Route("api/users")]
-[Authorize(Roles = AppRoles.Administrator)]
+[Authorize(Roles = AppRoles.Administrator, Policy = PageAccessRequirement.ReadPolicy)]
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 public class UsersApiController : ControllerBase
 {

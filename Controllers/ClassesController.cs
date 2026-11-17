@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using SchoolManagement.Authorization;
 using SchoolManagement.Interfaces.ServiceInterfaces;
+using SchoolManagement.Services;
 using SchoolManagement.Models;
 
 namespace SchoolManagement.Controllers;
 
-[Authorize(Roles = AppRoles.Administrator)]
+[Authorize]
 public class ClassesController : BaseController
 {
     private readonly IClassesService _classesService;
@@ -19,19 +21,24 @@ public class ClassesController : BaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    [Authorize(Policy = PageAccessRequirement.ReadPolicy)]
+    public async Task<IActionResult> Index([FromServices] PageAccessService pageAccess, CancellationToken cancellationToken)
     {
+        ViewData["CanAdd"] = await pageAccess.CanAccessAsync(User, ControllerContext.ActionDescriptor.ControllerName,
+            requireAdd: true, cancellationToken);
         var classes = await _classesService.GetClassesAsync(cancellationToken);
         return View(classes);
     }
 
     [HttpGet]
+    [Authorize(Policy = PageAccessRequirement.AddPolicy)]
     public IActionResult Create()
     {
         return View(new Classes());
     }
 
     [HttpPost]
+    [Authorize(Policy = PageAccessRequirement.AddPolicy)]
     public async Task<IActionResult> Create(Classes model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)

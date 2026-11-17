@@ -1,0 +1,88 @@
+@using DevExtreme.AspNet.Mvc
+@model PageInRoleViewModel
+@{
+    ViewData["Title"] = "Page in Role";
+    ViewData["WideContent"] = true;
+    var permissions = new[]
+    {
+        (nameof(PageRights.IsRead), "Read"),
+        (nameof(PageRights.IsAdd), "Add"),
+        (nameof(PageRights.IsEdit), "Edit"),
+        (nameof(PageRights.IsDelete), "Delete"),
+        (nameof(PageRights.IsImport), "Import"),
+        (nameof(PageRights.IsExport), "Export"),
+        (nameof(PageRights.Approve1), "Approve 1"),
+        (nameof(PageRights.Approve2), "Approve 2")
+    };
+}
+
+@section GridAssets {
+    <partial name="_DevExtremeGridAssets" />
+    <script src="~/js/page-in-role.js" asp-append-version="true" defer></script>
+}
+
+<h1 class="h3 mb-3">Page in Role</h1>
+
+<form id="page-rights-search" asp-action="Index" method="get"
+      class="row g-3 align-items-end mb-3" data-options-url="@Url.Action("Options")">
+    <div class="col-sm-4 col-lg-3">
+        <label for="rights-type" class="form-label">Type</label>
+        <select id="rights-type" name="type" class="form-select" required>
+            <option value="">Choose type</option>
+            <option value="1" selected="@(Model.Type == PageRightsType.User)">User Wise</option>
+            <option value="2" selected="@(Model.Type == PageRightsType.Designation)">Designation Wise</option>
+        </select>
+    </div>
+    <div class="col-sm-5 col-lg-4">
+        <label for="rights-target" class="form-label">User / Designation</label>
+        <select id="rights-target" name="targetId" class="form-select" required disabled="@(Model.Targets.Count == 0)">
+            <option value="">Choose user or designation</option>
+            @foreach (var target in Model.Targets)
+            {
+                <option value="@target.Id" selected="@(Model.TargetId == target.Id)">@target.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-sm-auto">
+        <button id="rights-search-button" type="submit" class="btn btn-primary" disabled="@(Model.Targets.Count == 0)">Search</button>
+    </div>
+</form>
+<div id="rights-options-status" class="text-muted small mb-3" role="status"></div>
+<div asp-validation-summary="All" class="text-danger"></div>
+
+@if (Model.Searched)
+{
+    <section id="page-rights-results" data-save-url="@Url.Action("Save")"
+             data-rights-type="@((int)Model.Type!.Value)" data-target-id="@Model.TargetId">
+        @Html.AntiForgeryToken()
+        <h2 class="h5">@Model.Targets.First(target => target.Id == Model.TargetId).Name</h2>
+        <p class="text-muted mb-2">Use the pencil to edit a page. Page Setting controls which rights are available.</p>
+        <div id="rights-save-error" class="alert alert-danger" role="alert" hidden></div>
+        <div id="rights-save-status" class="text-success small mb-2" role="status"></div>
+
+        @(Html.DevExtreme().TreeList()
+            .ID("pageRightsTree")
+            .DataSource(Model.Pages, nameof(PageRightsRow.PathId))
+            .ParentIdExpr(nameof(PageRightsRow.HierarchyId))
+            .RootValue(0)
+            .ShowBorders(true)
+            .RowAlternationEnabled(true)
+            .ColumnAutoWidth(true)
+            .SearchPanel(search => search.Visible(true).Placeholder("Find a page"))
+            .NoDataText("No pages are registered in Module Path.")
+            .Editing(editing => editing.Mode(GridEditMode.Row).UseIcons(true)
+                .AllowUpdating(new JS("pageInRole.canEdit")))
+            .OnEditorPreparing("pageInRole.prepareEditor")
+            .OnSaving("pageInRole.save")
+            .Columns(columns =>
+            {
+                columns.Add().DataField(nameof(PageRightsRow.PageName)).Caption("Module / page")
+                    .MinWidth(230).AllowEditing(false);
+                foreach (var (field, caption) in permissions)
+                {
+                    columns.Add().DataField(field).Caption(caption).Width(90)
+                        .DataType(GridColumnDataType.Boolean).AllowSorting(false).AllowSearch(false);
+                }
+            }))
+    </section>
+}

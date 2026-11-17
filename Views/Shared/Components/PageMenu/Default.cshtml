@@ -1,0 +1,28 @@
+@model PageMenuViewModel
+
+<nav aria-label="Main navigation">
+    <ul class="school-menu-list">
+        <li>
+            <a class="school-menu-link" asp-controller="Home" asp-action="Index"
+               aria-current="@(ViewContext.RouteData.Values["controller"] as string == "Home"
+                   && ViewContext.RouteData.Values["action"] as string == "Index" ? "page" : null)">
+                <i class="fi fi-rr-home" aria-hidden="true"></i>
+                <span>Home</span>
+            </a>
+        </li>
+        @foreach (var page in Model.Pages)
+        {
+            <partial name="_MenuItem" model="page" />
+        }
+    </ul>
+    @if (Model.AdministratorLinks.Count > 0)
+    {
+        <p class="school-menu-heading">Administration</p>
+        <ul class="school-menu-list">
+            @foreach (var page in Model.AdministratorLinks)
+            {
+                <partial name="_MenuItem" model="page" />
+            }
+        </ul>
+    }
+</nav>
